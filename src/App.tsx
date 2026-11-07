@@ -12,6 +12,7 @@ import {
   dateFromKey, dateLabel, eventMinutesToday, habitStreak, levelFromXp,
   loadData, localDateKey, totalXp, uid, weekStart, xpForAttribute,
 } from './lib/model'
+import { buildLifeRpgCalendar } from './lib/calendarExport'
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
@@ -198,6 +199,23 @@ export default function App() {
     const blob = new Blob([JSON.stringify({ ...data, exportedAt: new Date().toISOString() }, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = `life-rpg-backup-${today}.json`; link.click(); URL.revokeObjectURL(url); notify('Backup downloaded')
   }
+  const exportCalendar = () => {
+    const calendar = buildLifeRpgCalendar(data)
+    if (!calendar.eventCount) {
+      notify('No dated quests, completed activities or habit check-ins to export yet')
+      return
+    }
+    const blob = new Blob([calendar.content], { type: 'text/calendar;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `life-rpg-calendar-${today}.ics`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+    notify(`Calendar exported · ${calendar.eventCount} events`)
+  }
   const importData = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]; if (!file) return
     try {
@@ -307,9 +325,10 @@ export default function App() {
     const selectedLogs = data.habitLogs.filter((l) => l.date === selectedDate)
     const monthLabel = current.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
     return <>
-      <SectionHeader eyebrow="TIMELINE / HISTORY" title="Activity calendar" description="Look back at what you have built, one day at a time." action={<button className="button button-secondary" onClick={() => setSelectedDate(today)}><CalendarDays size={15} /> Today</button>} />
+      <SectionHeader eyebrow="TIMELINE / HISTORY" title="Activity calendar" description="Look back at what you have built, one day at a time." action={<div className="section-actions"><button className="button button-secondary" onClick={exportCalendar}><ArrowDownToLine size={15} /> Export .ics</button><button className="button button-secondary" onClick={() => setSelectedDate(today)}><CalendarDays size={15} /> Today</button></div>} />
       <div className="calendar-layout"><section className="panel calendar-panel"><div className="calendar-heading"><button className="icon-button" onClick={() => { const d = new Date(current); d.setMonth(d.getMonth() - 1); setSelectedDate(localDateKey(d)) }}><ChevronLeft size={17} /></button><h2>{monthLabel}</h2><button className="icon-button" onClick={() => { const d = new Date(current); d.setMonth(d.getMonth() + 1); setSelectedDate(localDateKey(d)) }}><ChevronRight size={17} /></button></div><div className="calendar-grid calendar-weekdays">{['MON','TUE','WED','THU','FRI','SAT','SUN'].map((d) => <span key={d}>{d}</span>)}</div><div className="calendar-grid">{calendarDays.map((day) => <button key={day.key} className={`calendar-day ${!day.inMonth ? 'outside' : ''} ${selectedDate === day.key ? 'selected' : ''} ${day.key === today ? 'is-today' : ''}`} onClick={() => setSelectedDate(day.key)}><span>{day.date.getDate()}</span>{day.events.length > 0 && <i />}{day.logs.length > 0 && <i className="habit-dot" />}</button>)}</div><div className="calendar-legend"><span><i /> XP activity</span><span><i className="habit-dot" /> Habit completed</span></div></section>
         <section className="panel date-detail"><div className="eyebrow">DAY DETAILS</div><h2>{dateFromKey(selectedDate).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h2><div className="date-summary"><div><strong>+{selectedEvents.reduce((sum, e) => sum + e.xp, 0)}</strong><span>XP earned</span></div><div><strong>{selectedEvents.length}</strong><span>Activities</span></div><div><strong>{selectedLogs.length}</strong><span>Habits</span></div></div><h3>Quest activity</h3>{selectedEvents.length ? <div className="feed-list">{selectedEvents.map((event) => <div className="feed-item" key={event.id}><div className="feed-icon"><Zap size={14} /></div><div className="feed-copy"><b>{event.questTitle}</b><small>{data.attributes.find((a) => a.id === event.attributeId)?.short || 'STAT'}</small></div><strong>+{event.xp}</strong></div>)}</div> : <p className="muted-paragraph">No XP recorded on this day.</p>}<h3>Habit activity</h3>{selectedLogs.length ? selectedLogs.map((log) => <div className="simple-row" key={log.id}><CheckCircle2 size={15} /><span>{data.habits.find((h) => h.id === log.habitId)?.title || 'Habit'}</span></div>) : <p className="muted-paragraph">No habit completions recorded.</p>}</section></div>
+      <section className="panel calendar-integration"><div className="calendar-integration-head"><div className="integration-icon"><CalendarDays size={19} /></div><div><div className="eyebrow">CALENDAR INTEGRATION / ICALENDAR</div><h2>Take your progress beyond LIFE RPG</h2><p>Export quest deadlines, completed activities and habit check-ins as a calendar file.</p></div></div><div className="calendar-integration-actions"><button className="button button-primary" onClick={exportCalendar}><ArrowDownToLine size={15} /> Download calendar (.ics)</button><a className="button button-secondary" href="https://calendar.notion.so/" target="_blank" rel="noreferrer">Open Notion Calendar <ChevronRight size={14} /></a></div><div className="integration-guidance"><div><b>Apple Calendar</b><p>Import the downloaded .ics file into Apple Calendar. Choose an iCloud calendar so it can appear on your other Apple devices.</p></div><div><b>Notion Calendar</b><p>Connect the same Apple iCloud account in Notion Calendar under Settings → Calendar accounts → Add calendar account. Apple may require an app-specific password for this connection. Your imported iCloud events can then appear there.</p></div></div><p className="integration-caveat">This is a one-way snapshot export, not live two-way sync. Export again after changing LIFE RPG. Journal entries are never included.</p></section>
     </>
   }
 

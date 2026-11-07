@@ -68,3 +68,13 @@ Do not commit exported backups or personal journal data to this public repositor
 - Completing a quest awards XP once per recurrence period: once ever for one-time quests, once per local day for daily quests, and once per local week for weekly quests.
 - Completing a habit awards 5 XP by default and updates the linked attribute; toggling it off removes that same completion reward. Habits are tracked separately to support consistency without penalizing missed days.
 - Journal writing never awards XP.
+
+## Calendar export (Apple Calendar and Notion Calendar)
+
+Open the **Calendar** page and choose **Export .ics**. The export contains dated quest deadlines, completed quest activity, and habit check-ins. Journal entries are deliberately excluded.
+
+- **Apple Calendar (Mac):** In Calendar, choose **File → Import**, select the downloaded `.ics` file, and import it into an iCloud calendar if you want it to sync to your other Apple devices.
+- **Apple Calendar (iPhone/iPad):** You can import an `.ics` attachment from Mail, or subscribe to a hosted `.ics` URL when one is available.
+- **Notion Calendar:** Connect the same Apple iCloud account in Notion Calendar under **Settings → Calendar accounts → Add calendar account**. Apple requires an app-specific password for this connection; create and enter it directly in Notion Calendar, never in LIFE RPG or GitHub. Events imported into that iCloud calendar can then appear in Notion Calendar.
+
+This is a one-way snapshot export. Export a fresh `.ics` file after changing LIFE RPG; this GitHub Pages version does not provide continuous two-way calendar synchronization. A future direct Notion database integration would require a secure server-side integration so a Notion secret is never exposed in the public frontend. See [Notion Calendar and Notion databases](https://www.notion.com/help/use-notion-calendar-with-notion).
